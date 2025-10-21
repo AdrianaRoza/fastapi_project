@@ -13,7 +13,7 @@ Base = declarative_base()
 class User(Base):
     __tablename__ = "users"
 
-    id = Column("id", Integer, primary_key=True, autoincrement=True)
+    id = Column("id", Integer, primary_key=True, autoincrement=True) 
     name = Column("name", String)
     email = Column("email",String, nullable=False)
     password = Column("password", String)
@@ -33,14 +33,14 @@ class User(Base):
 class order(Base):
     __tablename__= "orders"
 
-    STATUS_PEDIDOS = (
-        ("PENDENTE", "PENDENTE"),
-        ("CANCELADO", "CANCELADO"),
-        ("FINALIZADO", "FINALIZADO")
-    )
+    #STATUS_PEDIDOS = (
+        #("PENDENTE", "PENDENTE"),
+        #("CANCELADO", "CANCELADO"),
+       # ("FINALIZADO", "FINALIZADO")
+    #)
 
     id = Column("id",Integer,primary_key=True, autoincrement=True)
-    status = Column("status",ChoiceType(choices=STATUS_PEDIDOS)) #pendentre, cancelado, finalizado
+    status = Column("status", String)
     user = Column("user",ForeignKey("users.id"))
     price = Column("price", Float)
    # itens =
