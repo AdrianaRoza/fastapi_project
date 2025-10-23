@@ -30,7 +30,7 @@ class User(Base):
 
 
 #Pedidos
-class order(Base):
+class Order(Base):
     __tablename__= "orders"
 
     #STATUS_PEDIDOS = (
@@ -54,7 +54,7 @@ class order(Base):
 
 #Itens do pedido
 
-class orderedItem(Base):
+class OrderedItem(Base):
     __tablename__ = "orderedItems"
 
     id = Column("id",Integer,primary_key=True, autoincrement=True)
