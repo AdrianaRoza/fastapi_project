@@ -18,3 +18,11 @@ class OrderSchemas(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class LoginSchemas(BaseModel):
+    email:str
+    password:str
+
+    class Config:
+        from_attributes = True
