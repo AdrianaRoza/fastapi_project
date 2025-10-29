@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from dependencies import capture_session, verify_token
-from schemas import OrderSchemas
-from models import Order, User
+from schemas import OrderSchemas, ItemOrderSchema
+from models import Order, User, OrderedItem
 
 order_router = APIRouter(prefix="/order", tags=["order"], dependencies=[Depends(verify_token)])
 
@@ -20,9 +20,9 @@ async def create_order(order_schemas: OrderSchemas, session: Session = Depends(c
     session.commit()
     return{"mensagem": f"Pedido criado com sucesso. ID do pedido:{new_order.id}"} 
 
-@order_router.post("/order/cancelled/{order_id}")
-async def cancel_order(order_id: int, session: Session = Depends(capture_session), user: User = Depends(verify_token)):
-    order = session.query(Order).filter(Order.id==order_id).first()
+@order_router.post("/order/cancelled/{id_order}")
+async def cancel_order(id_order: int, session: Session = Depends(capture_session), user: User = Depends(verify_token)):
+    order = session.query(Order).filter(Order.id==id_order).first()
     if not order:
         raise HTTPException(status_code=400, detail="Pedido não encontrado")
     if not user.admin and user.id != order.user:
@@ -30,8 +30,8 @@ async def cancel_order(order_id: int, session: Session = Depends(capture_session
     order.status = "CANCELADO"
     session.commit()
     return{
-        "mensage": f"Pedido de número: {order_id} cancelado com sucesso",
-        "order":order
+        "mensage": f"Pedido de número: {order.id} cancelado com sucesso",
+        "order": order
 }
 
 
@@ -44,3 +44,29 @@ async def list_order(session: Session = Depends(capture_session), user: User = D
         return{
             "order": order
         }
+    
+
+
+@order_router.post("/order/add-item/{id_order}")
+async def add_item_order(id_order: int,
+                         item_order_schema: ItemOrderSchema, 
+                         session: Session = Depends(capture_session), 
+                         user: User = Depends(verify_token)):
+    order = session.query(Order).filter(Order.id==id_order).first()
+    if not order:
+        raise HTTPException(status_code=400, detail="Pedido não existente")
+    if not user.admin and user.id != order.user:
+        raise HTTPException(status_code=401, detail="Você não tem autorização para essa operação")
+    item_order = OrderedItem(item_order_schema.amount,
+                             item_order_schema.flavor,
+                             item_order_schema.size,
+                             item_order_schema.unit_price,
+                             id_order)
+    order.calculate_price()
+    session.add(item_order)
+    session.commit()
+    return{
+        "mensage": "Item criado com sucesso",
+        "item_id": item_order.id,
+        "preco_pedido": order.price
+    }

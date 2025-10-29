@@ -51,6 +51,9 @@ class Order(Base):
         self.price = price
         self.status = status
 
+    def calculate_price(self):
+        self.price = 10
+
 
 #Itens do pedido
 
