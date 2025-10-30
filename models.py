@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine, Column, String, Integer, Boolean, Float, ForeignKey
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy_utils.types import ChoiceType
 
 
@@ -43,7 +43,7 @@ class Order(Base):
     status = Column("status", String)
     user = Column("user",ForeignKey("users.id"))
     price = Column("price", Float)
-   # itens =
+    itens = relationship("OrderedItem", cascade="all, delete")
 
 
     def __init__(self, user,status="PENDENTE",price=0):
@@ -52,7 +52,8 @@ class Order(Base):
         self.status = status
 
     def calculate_price(self):
-        self.price = 10
+    
+        self.price = sum(item.unit_price * item.amount for item in self.itens)
 
 
 #Itens do pedido
