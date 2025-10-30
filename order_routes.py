@@ -62,11 +62,33 @@ async def add_item_order(id_order: int,
                              item_order_schema.size,
                              item_order_schema.unit_price,
                              id_order)
-    order.calculate_price()
     session.add(item_order)
+    order.calculate_price()
     session.commit()
     return{
         "mensage": "Item criado com sucesso",
         "item_id": item_order.id,
         "preco_pedido": order.price
+    }
+
+
+@order_router.post("/order/remove-item/{id_item_order}")
+async def remove_item_order(id_item_order: int, 
+                         session: Session = Depends(capture_session), 
+                         user: User = Depends(verify_token)):
+    item_order = session.query(OrderedItem).filter(OrderedItem.id==id_item_order).first()
+    if not item_order:
+        raise HTTPException(status_code=404, detail=f"Item {id_item_order} não encontrado")
+    order = session.query(Order).filter(Order.id==item_order.order).first()
+    if not item_order:
+        raise HTTPException(status_code=400, detail="Item no pedido não existente")
+    if not user.admin and user.id != order.user:
+        raise HTTPException(status_code=401, detail="Você não tem autorização para essa operação")
+    session.delete(item_order)
+    order.calculate_price()
+    session.commit()
+    return{
+        "mensage": "Item removido com sucesso",
+        "itens_order": order.itens,
+        "order": order
     }
