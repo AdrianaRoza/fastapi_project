@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from dependencies import capture_session, verify_token
-from schemas import OrderSchemas, ItemOrderSchema
+from schemas import OrderSchemas, ItemOrderSchema, ResponseOrderSchema
 from models import Order, User, OrderedItem
+from typing import List
 
 order_router = APIRouter(prefix="/order", tags=["order"], dependencies=[Depends(verify_token)])
 
@@ -89,6 +90,41 @@ async def remove_item_order(id_item_order: int,
     session.commit()
     return{
         "mensage": "Item removido com sucesso",
-        "itens_order": order.itens,
+        "amount_itens_order": len(order.itens),
         "order": order
     }
+
+
+
+@order_router.post("/order/finish/{id_order}")
+async def finish_order(id_order: int, session: Session = Depends(capture_session), user: User = Depends(verify_token)):
+    order = session.query(Order).filter(Order.id==id_order).first()
+    if not order:
+        raise HTTPException(status_code=400, detail="Pedido não encontrado")
+    if not user.admin and user.id != order.user:
+        raise HTTPException(status_code=401, detail="Você não tem autorização para fazer essa modificação")
+    order.status = "FINALIZADO"
+    session.commit()
+    return{
+        "mensage": f"Pedido de número: {order.id} finalizado com sucesso",
+        "order": order
+}
+
+
+@order_router.get("/pedido/{id_order}")
+async def view_order(id_order: int, session: Session = Depends(capture_session), user: User = Depends(verify_token)):
+    order = session.query(Order).filter(Order.id==id_order).first()
+    if not order:
+        raise HTTPException(status_code=400, detail="Pedido não encontrado")
+    if not user.admin and user.id != order.user:
+        raise HTTPException(status_code=401, detail="Você não tem autorização para fazer essa modificação")
+    return{
+        "amount_itens_order": len(order.itens),
+        "order": order
+    }
+
+
+@order_router.get("/list/order-user", response_model=List[ResponseOrderSchema])
+async def list_order(session: Session = Depends(capture_session), user: User = Depends(verify_token)): 
+        order = session.query(Order).filter(Order.user==user.id).all()
+        return order
